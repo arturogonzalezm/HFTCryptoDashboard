@@ -78,22 +78,22 @@ classDiagram
         +main()
     }
     class Handlers {
-        +HandleInterrupt(interrupt chan os.Signal, done chan struct, client *WebSocketClient)
+        +HandleInterrupt(interrupt chan, done chan, client *WebSocketClient)
     }
     class Util {
-        +LogInfo(format string, args ...interface{})
-        +LogError(format string, args ...interface{})
-        +LogAndExit(format string, code int, args ...interface{})
-        +CheckError(err error, format string, args ...interface{})
+        +LogInfo(format string, args)
+        +LogError(format string, args)
+        +LogAndExit(format string, code int, args)
+        +CheckError(err error, format string, args)
         +FileExists(filename string) bool
         +ValidateConfig(cfg interface{}) error
         +ToUpperCase(s string) string
         +ToLowerCase(s string) string
-        +Contains(s, substr string) bool
+        +Contains(s string, substr string) bool
         +MakeGetRequest(url string) (string, error)
         +CurrentTimestamp() string
         +ParseTimestamp(timestamp string, format string) (time.Time, error)
-        +Retry(maxAttempts int, delay time.Duration, fn func() error) error
+        +Retry(maxAttempts int, delay time.Duration, fn func()) error
     }
 
     Main --> Config : uses
