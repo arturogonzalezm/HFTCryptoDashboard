@@ -58,53 +58,6 @@ sequenceDiagram
     Main->>Util: Log Shutdown (LogInfo)
 ```
 
-## Class Diagram
-
-```mermaid
-classDiagram
-    class Config {
-        +Symbols[] string
-        +LoadConfig(filename string) *Config
-    }
-    class WebSocketClient {
-        -Conn *websocket.Conn
-        -config *Config
-        -mu sync.Mutex
-        +GetWebSocketClient(cfg *Config) *WebSocketClient
-        +ReadMessages(done chan struct)
-        +CloseConnection()
-    }
-    class Main {
-        +main()
-    }
-    class Handlers {
-        +HandleInterrupt(interrupt chan, done chan, client *WebSocketClient)
-    }
-    class Util {
-        +LogInfo(format string, args)
-        +LogError(format string, args)
-        +LogAndExit(format string, code int, args)
-        +CheckError(err error, format string, args)
-        +FileExists(filename string) bool
-        +ValidateConfig(cfg interface{}) error
-        +ToUpperCase(s string) string
-        +ToLowerCase(s string) string
-        +Contains(s string, substr string) bool
-        +MakeGetRequest(url string) (string, error)
-        +CurrentTimestamp() string
-        +ParseTimestamp(timestamp string, format string) (time.Time, error)
-        +Retry(maxAttempts int, delay time.Duration, fn func()) error
-    }
-
-    Main --> Config : uses
-    Main --> WebSocketClient : uses
-    Main --> Handlers : uses
-    Main --> Util : uses
-    WebSocketClient --> Config : contains
-    WebSocketClient --> Util : uses
-    Handlers --> Util : uses
-```
-
 ## Key Components
 
 1. **Config**: Loads and parses the `config.yaml` file, which contains the list of cryptocurrency symbols to monitor.
