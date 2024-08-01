@@ -4,7 +4,7 @@ import (
 	"HFTCryptoDashboard/internal/config"
 	"HFTCryptoDashboard/internal/handlers"
 	"HFTCryptoDashboard/internal/websocket"
-	"log"
+	"HFTCryptoDashboard/pkg/util"
 	"os"
 	"os/signal"
 	"syscall"
@@ -13,12 +13,15 @@ import (
 func main() {
 	cfg, err := config.LoadConfig("configs/config.yaml")
 	if err != nil {
-		log.Fatalf("Failed to load config: %v", err)
+		util.LogAndExit("Failed to load config: %v", 1, err)
 	}
 
 	client, err := websocket.GetWebSocketClient(cfg)
 	if err != nil {
-		log.Fatalf("Failed to get WebSocket client: %v", err)
+		util.LogAndExit("Failed to get WebSocket client: %v", 1, err)
+	}
+	if client == nil {
+		util.LogAndExit("WebSocket client is nil", 1)
 	}
 	defer client.CloseConnection()
 
@@ -26,7 +29,9 @@ func main() {
 	signal.Notify(interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	done := make(chan struct{})
-	go client.ReadMessages(done)
+	go func() {
+		client.ReadMessages(done)
+	}()
 
 	handlers.HandleInterrupt(interrupt, done, client)
 }

@@ -17,20 +17,25 @@ type WebSocketClient struct {
 
 var instance *WebSocketClient
 var once sync.Once
+var onceErr error
 
 func GetWebSocketClient(cfg *config.Config) (*WebSocketClient, error) {
-	var err error
 	once.Do(func() {
 		conn, err := connectAndSubscribe("wss://stream.binance.com:9443/ws", cfg.Symbols)
 		if err != nil {
-			log.Fatalf("Failed to connect and subscribe: %v", err)
+			onceErr = fmt.Errorf("failed to connect and subscribe: %v", err)
+			return
 		}
 		instance = &WebSocketClient{
 			Conn:   conn,
 			config: cfg,
 		}
 	})
-	return instance, err
+
+	if onceErr != nil {
+		return nil, onceErr
+	}
+	return instance, nil
 }
 
 func connectAndSubscribe(url string, symbols []string) (*websocket.Conn, error) {
