@@ -1,2 +1,1 @@
-.idea
-.idea/*
+# HFT Crypto Dashboard
