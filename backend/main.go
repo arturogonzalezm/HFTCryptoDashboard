@@ -4,7 +4,7 @@ import (
 	"HFTCryptoDashboard/internal/config"
 	"HFTCryptoDashboard/internal/handlers"
 	"HFTCryptoDashboard/internal/websocket"
-	"HFTCryptoDashboard/pkg/util"
+	"HFTCryptoDashboard/pkg/util" // Corrected import path
 	"os"
 	"os/signal"
 	"syscall"
