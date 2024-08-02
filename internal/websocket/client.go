@@ -1,11 +1,12 @@
 package websocket
 
 import (
-	"fmt"
+	"encoding/json"
 	"log"
 	"sync"
 
 	"HFTCryptoDashboard/internal/config"
+	"HFTCryptoDashboard/pkg/db"
 	"github.com/gorilla/websocket"
 )
 
@@ -23,7 +24,7 @@ func GetWebSocketClient(cfg *config.Config) (*WebSocketClient, error) {
 	once.Do(func() {
 		conn, err := connectAndSubscribe("wss://stream.binance.com:9443/ws", cfg.Symbols)
 		if err != nil {
-			onceErr = fmt.Errorf("failed to connect and subscribe: %v", err)
+			onceErr = err
 			return
 		}
 		instance = &WebSocketClient{
@@ -45,8 +46,16 @@ func connectAndSubscribe(url string, symbols []string) (*websocket.Conn, error) 
 	}
 
 	for _, symbol := range symbols {
-		message := fmt.Sprintf("{\"method\": \"SUBSCRIBE\", \"params\": [\"%s@ticker\"], \"id\": 1}", symbol)
-		err = conn.WriteMessage(websocket.TextMessage, []byte(message))
+		message := struct {
+			Method string   `json:"method"`
+			Params []string `json:"params"`
+			ID     int      `json:"id"`
+		}{
+			Method: "SUBSCRIBE",
+			Params: []string{symbol + "@ticker"},
+			ID:     1,
+		}
+		err := conn.WriteJSON(message)
 		if err != nil {
 			return nil, err
 		}
@@ -62,7 +71,15 @@ func (client *WebSocketClient) ReadMessages(done chan struct{}) {
 			log.Printf("Error reading message: %v", err)
 			return
 		}
-		log.Printf("Received message: %s", message)
+
+		var ticker db.TickerData
+		err = json.Unmarshal(message, &ticker)
+		if err != nil {
+			log.Printf("Error unmarshalling message: %v, message: %s", err, message)
+			continue
+		}
+
+		handleTickerData(ticker)
 	}
 }
 
@@ -71,5 +88,19 @@ func (client *WebSocketClient) CloseConnection() {
 	defer client.mu.Unlock()
 	if err := client.Conn.Close(); err != nil {
 		log.Printf("Failed to close WebSocket connection: %v", err)
+	}
+}
+
+func handleTickerData(ticker db.TickerData) {
+	if ticker.Symbol == "" || ticker.EventTime == 0 {
+		log.Printf("Invalid ticker data received: %+v", ticker)
+		return
+	}
+
+	err := db.InsertTickerData(ticker)
+	if err != nil {
+		log.Printf("Failed to insert ticker data: %v", err)
+	} else {
+		log.Printf("Successfully inserted ticker data: %+v", ticker)
 	}
 }
